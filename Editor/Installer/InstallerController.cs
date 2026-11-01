@@ -94,6 +94,13 @@ namespace HybridCLR.Installer
             }
             if (bestMatch == null)
             {
+                if (curVer.major >= 7000)
+                {
+                    throw new NotSupportedException($"HybridCLR native support for Unity {Application.unityVersion} is not ready. " +
+                        "Unity 7 changes the IL2CPP metadata and runtime ABI; a Unity 6 runtime cannot be installed as a substitute. " +
+                        "The codex/unity7-support maintenance branch contains an incomplete source port, not a validated runtime. " +
+                        "See https://github.com/mmm1h/hybridclr_unity/blob/codex/unity7-support/UNITY7.md");
+                }
                 string compatibleVersions = string.Join(", ", versions.Select(v => v.unity_version));
                 throw new NotSupportedException($"No compatible version found for Unity {curVer.major}.{curVer.minor1}.{curVer.minor2}, please use compatible version of Unity: {compatibleVersions}");
             }

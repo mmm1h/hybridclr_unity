@@ -35,6 +35,7 @@ namespace HybridCLR.BuildProcessors.Hooks
 
         static PatchScriptingAssembliesJsonHook()
         {
+#if !UNITY_7000_0_OR_NEWER
             if (_hook == null)
             {
                 Type type = typeof(UnityEditor.EditorApplication);
@@ -48,6 +49,7 @@ namespace HybridCLR.BuildProcessors.Hooks
                 _hook.Install();
 #endif
             }
+#endif
         }
 
         private static string BuildMainWindowTitle()

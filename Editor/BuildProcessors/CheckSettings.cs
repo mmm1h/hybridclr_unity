@@ -38,6 +38,14 @@ namespace HybridCLR.BuildProcessors
         public void OnPreprocessBuild(BuildReport report)
         {
             HybridCLRSettings globalSettings = SettingsUtil.HybridCLRSettings;
+#if UNITY_7000_0_OR_NEWER
+            if (globalSettings.enable)
+            {
+                throw new BuildFailedException("HybridCLR Unity 7 native support is incomplete. " +
+                    "The maintenance branch cannot build an IL2CPP Player yet. " +
+                    "See https://github.com/mmm1h/hybridclr_unity/blob/codex/unity7-support/UNITY7.md");
+            }
+#endif
             if (!globalSettings.enable || globalSettings.useGlobalIl2cpp)
             {
                 string oldIl2cppPath = Environment.GetEnvironmentVariable("UNITY_IL2CPP_PATH");

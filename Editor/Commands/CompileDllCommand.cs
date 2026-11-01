@@ -20,6 +20,7 @@
 
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Player;
 using UnityEngine;
 
@@ -34,13 +35,24 @@ namespace HybridCLR.Commands
             ScriptCompilationSettings scriptCompilationSettings = new ScriptCompilationSettings();
             scriptCompilationSettings.group = group;
             scriptCompilationSettings.target = target;
+#if UNITY_7000_0_OR_NEWER
+            // Unity 7 compiles the configured managed code variant. DevelopmentBuild is
+            // now an obsolete error and DEVELOPMENT_BUILD is no longer emitted by Unity.
+            scriptCompilationSettings.options = ScriptCompilationOptions.None;
+#else
             scriptCompilationSettings.options = developmentBuild ? ScriptCompilationOptions.DevelopmentBuild : ScriptCompilationOptions.None;
+#endif
             Directory.CreateDirectory(buildDir);
             ScriptCompilationResult scriptCompilationResult = PlayerBuildInterface.CompilePlayerScripts(scriptCompilationSettings, buildDir);
 #if UNITY_2022
             UnityEditor.EditorUtility.ClearProgressBar();
 #endif
+#if UNITY_7000_0_OR_NEWER
+            var variant = PlayerSettings.GetManagedCodeVariant(NamedBuildTarget.FromBuildTargetGroup(group));
+            Debug.Log($"compile finish!!! buildDir:{buildDir} target:{target} managedCodeVariant:{variant}");
+#else
             Debug.Log($"compile finish!!! buildDir:{buildDir} target:{target} development:{developmentBuild}");
+#endif
         }
 
         public static void CompileDll(BuildTarget target)

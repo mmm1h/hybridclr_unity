@@ -35,6 +35,7 @@ namespace HybridCLR.BuildProcessors.Hooks
 
         static GetIl2CppFolderHook()
         {
+#if !UNITY_7000_0_OR_NEWER
             if (_hook == null)
             {
                 Type type = typeof(UnityEditor.EditorApplication).Assembly.GetType("UnityEditorInternal.IL2CPPUtils");
@@ -47,6 +48,7 @@ namespace HybridCLR.BuildProcessors.Hooks
                 _hook = new MethodHook(miTarget, miReplacement, miProxy);
                 _hook.Install();
             }
+#endif
         }
 
         private delegate string StripAssembliesDel(out bool isDevelopmentLocation);

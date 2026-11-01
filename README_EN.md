@@ -4,6 +4,8 @@
 
 # HybridCLR
 
+> This fork's `codex/unity7-support` branch is an incomplete Unity 7 source port. The native runtime is not usable yet. See [UNITY7.md](./UNITY7.md).
+
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/focus-creative-games/hybridclr/blob/main/LICENSE)
 
 ![logo](https://github.com/focus-creative-games/hybridclr/raw/main/docs/images/logo.jpg)
