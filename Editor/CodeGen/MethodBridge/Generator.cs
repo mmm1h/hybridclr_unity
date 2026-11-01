@@ -245,7 +245,7 @@ namespace HybridCLR.CodeGen.MethodBridge
 
             if (method.IsVirtual)
             {
-                if (method.DeclaringType.IsInterface)
+                if (method.DeclaringType.IsInterface && !method.IsStatic)
                 {
                     AddAdjustThunkMethod(m2nMethod);
                 }

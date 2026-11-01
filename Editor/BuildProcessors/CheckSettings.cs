@@ -41,9 +41,7 @@ namespace HybridCLR.BuildProcessors
 #if UNITY_7000_0_OR_NEWER
             if (globalSettings.enable)
             {
-                throw new BuildFailedException("HybridCLR Unity 7 native support is incomplete. " +
-                    "The maintenance branch cannot build an IL2CPP Player yet. " +
-                    "See https://github.com/mmm1h/hybridclr_unity/blob/codex/unity7-support/UNITY7.md");
+                Installer.Unity7RuntimeInstaller.ValidateInstallation();
             }
 #endif
             if (!globalSettings.enable || globalSettings.useGlobalIl2cpp)

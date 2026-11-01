@@ -64,6 +64,10 @@ namespace HybridCLR.CodeGen.Il2CppDef
             int minorVer2 = int.Parse(match.Groups[3].Value);
 
             cw.WriteLine($"#define HYBRIDCLR_UNITY_VERSION {majorVer}{minorVer1.ToString("D2")}{minorVer2.ToString("D2")}");
+#if UNITY_7000_0_OR_NEWER
+            Installer.Unity7RuntimeInstaller.LoadPin();
+            cw.WriteLine("#define HYBRIDCLR_UNITY7_EXPERIMENTAL 1");
+#endif
 
 #if TUANJIE_1_1_OR_NEWER
             var tuanjieMatch = Regex.Matches(Application.tuanjieVersion, @"(\d+)\.(\d+)\.(\d+)");

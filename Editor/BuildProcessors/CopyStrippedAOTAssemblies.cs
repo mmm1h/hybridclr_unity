@@ -42,7 +42,11 @@ namespace HybridCLR.BuildProcessors
             {
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
+#if UNITY_7000_0_OR_NEWER
+            return $"{projectDir}/Library/Bee/artifacts/WinPlayerBuildProgram/ManagedStripped/{(target == BuildTarget.StandaloneWindows64 ? "x64" : "x86")}";
+#else
             return $"{projectDir}/Library/Bee/artifacts/WinPlayerBuildProgram/ManagedStripped";
+#endif
             case BuildTarget.StandaloneLinux64:
             return $"{projectDir}/Library/Bee/artifacts/LinuxPlayerBuildProgram/ManagedStripped";
             case BuildTarget.WSAPlayer:

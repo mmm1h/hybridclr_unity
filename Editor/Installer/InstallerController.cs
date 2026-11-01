@@ -57,7 +57,13 @@ namespace HybridCLR.Installer
             _curVersion = UnityVersion.ParseUnityVersion(Application.unityVersion);
             HybridclrVersionManifest versionManifest = GetHybridCLRVersionManifest();
 
+#if UNITY_7000_0_OR_NEWER
+            Unity7RuntimeInstaller.Pin pin = Unity7RuntimeInstaller.LoadPin();
+            _curDefaultVersion = new HybridclrVersionInfo { unity_version = pin.unity_version,
+                hybridclr = new VersionDesc { tag = pin.hybridclr_revision }, il2cpp_plus = new VersionDesc { tag = pin.il2cpp_plus_revision } };
+#else
             _curDefaultVersion = FindMatchedVersion(versionManifest.versions, _curVersion);
+#endif
             PackageVersion = LoadPackageInfo().version;
             InstalledLibil2cppVersion = ReadLocalVersion();
         }
@@ -94,13 +100,6 @@ namespace HybridCLR.Installer
             }
             if (bestMatch == null)
             {
-                if (curVer.major >= 7000)
-                {
-                    throw new NotSupportedException($"HybridCLR native support for Unity {Application.unityVersion} is not ready. " +
-                        "Unity 7 changes the IL2CPP metadata and runtime ABI; a Unity 6 runtime cannot be installed as a substitute. " +
-                        "The codex/unity7-support maintenance branch contains an incomplete source port, not a validated runtime. " +
-                        "See https://github.com/mmm1h/hybridclr_unity/blob/codex/unity7-support/UNITY7.md");
-                }
                 string compatibleVersions = string.Join(", ", versions.Select(v => v.unity_version));
                 throw new NotSupportedException($"No compatible version found for Unity {curVer.major}.{curVer.minor1}.{curVer.minor2}, please use compatible version of Unity: {compatibleVersions}");
             }
@@ -188,12 +187,21 @@ namespace HybridCLR.Installer
 
         public void InstallDefaultHybridCLR()
         {
+#if UNITY_7000_0_OR_NEWER
+            Unity7RuntimeInstaller.Install(ApplicationIl2cppPath);
+            WriteLocalVersion();
+#else
             InstallFromLocal(PrepareLibil2cppWithHybridclrFromGitRepo());
+#endif
         }
 
         public bool HasInstalledHybridCLR()
         {
+#if UNITY_7000_0_OR_NEWER
+            return Unity7RuntimeInstaller.HasInstalled();
+#else
             return Directory.Exists($"{SettingsUtil.LocalIl2CppDir}/libil2cpp/hybridclr");
+#endif
         }
 
         void CloneBranch(string workDir, string repoUrl, string branch, string repoDir)
@@ -234,7 +242,11 @@ namespace HybridCLR.Installer
 
         public void InstallFromLocal(string libil2cppWithHybridclrSourceDir)
         {
+#if UNITY_7000_0_OR_NEWER
+            throw new NotSupportedException("Unity 7 installs its pinned source patches through the default Installer path; copying another libil2cpp tree is not supported");
+#else
             RunInitLocalIl2CppData(ApplicationIl2cppPath, libil2cppWithHybridclrSourceDir);
+#endif
         }
 
         private void RunInitLocalIl2CppData(string editorIl2cppPath, string libil2cppWithHybridclrSourceDir)
