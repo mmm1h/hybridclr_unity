@@ -3,7 +3,7 @@
   "revision": "8751f7c83ed7",
   "source_tree_sha256": "99b82890b794b22fe2c93bf38fe4ffe8d11f9890af459d2067c9876ed0f78fdd",
   "source_file_count": 1134,
-  "installation_layout": 1,
+  "installation_layout": 2,
   "hybridclr_url": "https://github.com/mmm1h/hybridclr.git",
   "hybridclr_revision": "daf1e1fd38f362a8768c96f30a3b6f0d5fa2f78d",
   "il2cpp_plus_url": "https://github.com/mmm1h/il2cpp_plus.git",

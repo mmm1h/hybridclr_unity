@@ -1,6 +1,6 @@
 # HybridCLR
 
-> 本 fork 的 `codex/unity7-support` 分支正在移植 Unity 7，原生运行时尚不可用。范围与限制见 [UNITY7.md](./UNITY7.md)。
+> 本 fork 的 `codex/unity7-support` 分支维护 Unity 7000.0.0a12 适配。范围与验证方式见 [UNITY7.md](./UNITY7.md)。
 
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/focus-creative-games/hybridclr/blob/main/LICENSE)
 

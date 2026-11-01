@@ -40,7 +40,7 @@ namespace HybridCLR.Installer
             return installed != null && installed.unity_version == pin.unity_version && installed.revision == pin.revision
                 && installed.source_tree_sha256 == pin.source_tree_sha256 && installed.hybridclr_revision == pin.hybridclr_revision
                 && installed.il2cpp_plus_revision == pin.il2cpp_plus_revision && installed.installation_layout == pin.installation_layout
-                && File.Exists(Path.Combine(SettingsUtil.LocalIl2CppDir, "il2cpp/bin/Release/net10.0/il2cpp.exe"))
+                && File.Exists(Path.Combine(SettingsUtil.LocalIl2CppDir, "il2cpp/bin/Release/net10.0/il2cpp" + ExecutableSuffix))
                 && File.Exists(Path.Combine(SettingsUtil.LocalIl2CppDir, "Unity.IL2CPP.Bee.BuildLogic/bin/Release/net10.0/Unity.IL2CPP.Bee.BuildLogic.dll"));
         }
 
@@ -50,30 +50,31 @@ namespace HybridCLR.Installer
             var pin = JsonUtility.FromJson<Pin>(File.ReadAllText(path));
             if (pin == null || Application.unityVersion != pin.unity_version)
                 throw new NotSupportedException($"This HybridCLR port supports only Unity {pin?.unity_version}; current editor is {Application.unityVersion}");
-            if (Application.platform != RuntimePlatform.WindowsEditor)
-                throw new NotSupportedException("This Unity 7 maintenance installer currently supports Windows Editor only");
             return pin;
         }
 
         internal static void ValidateInstallation()
         {
             LoadPin();
-            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneWindows64)
-                throw new NotSupportedException("This Unity 7 maintenance runtime currently permits only Win64 IL2CPP builds");
             if (SettingsUtil.HybridCLRSettings.useGlobalIl2cpp)
                 throw new NotSupportedException("Unity 7 requires the project-local patched IL2CPP SDK");
             if (!HasInstalled())
                 throw new InvalidOperationException("The installed Unity 7 runtime does not match the package lock; reinstall it");
         }
 
+        private static string ExecutableSuffix => Application.platform == RuntimePlatform.WindowsEditor ? ".exe" : "";
+
         private static void PrepareDevelopmentLayout(string sdk)
         {
             // UNITY_IL2CPP_PATH intentionally selects Unity's development layout.
             // Supply the matching source layout for the editor's tool discovery.
             string deploy = Path.Combine(sdk, "build", "deploy");
-            foreach (string executable in Directory.GetFiles(deploy, "*.exe"))
+            foreach (string executable in Directory.GetFiles(deploy).Where(path =>
+                ExecutableSuffix.Length != 0 ? path.EndsWith(ExecutableSuffix, StringComparison.OrdinalIgnoreCase)
+                    : File.Exists(path + ".runtimeconfig.json")))
             {
-                string destination = Path.Combine(sdk, Path.GetFileNameWithoutExtension(executable), "bin", "Release", "net10.0");
+                string name = ExecutableSuffix.Length != 0 ? Path.GetFileNameWithoutExtension(executable) : Path.GetFileName(executable);
+                string destination = Path.Combine(sdk, name, "bin", "Release", "net10.0");
                 Directory.CreateDirectory(destination);
                 foreach (string file in Directory.GetFiles(deploy))
                     File.Copy(file, Path.Combine(destination, Path.GetFileName(file)));
@@ -87,7 +88,8 @@ namespace HybridCLR.Installer
                 Directory.CreateDirectory(destination);
                 File.Copy(Path.Combine(deploy, library + ".dll"), Path.Combine(destination, library + ".dll"));
             }
-            CopyTree(Path.Combine(sdk, "BCLExtensions"), Path.Combine(sdk, "build", "tests", "BCLExtensions", "net471"));
+            string extensions = Path.Combine(sdk, "BCLExtensions");
+            if (Directory.Exists(extensions)) CopyTree(extensions, Path.Combine(sdk, "build", "tests", "BCLExtensions", "net471"));
         }
 
         private static void RunGit(string directory, params string[] arguments)
@@ -179,6 +181,9 @@ namespace HybridCLR.Installer
                 Checkout(Path.Combine(staging, "hybridclr"), pin.hybridclr_url, pin.hybridclr_revision);
                 Checkout(Path.Combine(staging, "il2cpp_plus"), pin.il2cpp_plus_url, pin.il2cpp_plus_revision);
                 CopyTree(editorIl2cpp, sdk);
+                string hostDeploy = Path.Combine(sdk, "build", "deploy_" +
+                    (System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "arm64" : "x86_64"));
+                if (Directory.Exists(hostDeploy)) CopyTree(hostDeploy, Path.Combine(sdk, "build", "deploy"));
                 PrepareDevelopmentLayout(sdk);
                 string patches = Path.Combine(staging, "il2cpp_plus", "unity7", pin.unity_version);
                 foreach (string patch in Directory.GetFiles(patches, "*.patch").OrderBy(path => path, StringComparer.Ordinal))

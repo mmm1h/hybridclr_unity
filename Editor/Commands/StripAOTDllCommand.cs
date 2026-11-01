@@ -88,9 +88,9 @@ namespace HybridCLR.Commands
             var buildOptions = GetBuildPlayerOptions(target);
 
             bool oldExportAndroidProj = EditorUserBuildSettings.exportAsGoogleAndroidProject;
-#if UNITY_EDITOR_OSX
+#if UNITY_EDITOR_OSX && UNITY_STANDALONE_OSX
             bool oldCreateSolution = UnityEditor.OSXStandalone.UserBuildSettings.createXcodeProject;
-#elif UNITY_EDITOR_WIN
+#elif UNITY_EDITOR_WIN && UNITY_STANDALONE_WIN
             bool oldCreateSolution = UnityEditor.WindowsStandalone.UserBuildSettings.createSolution;
 #endif
 #if TUANJIE_2022_3_OR_NEWER
@@ -112,14 +112,14 @@ namespace HybridCLR.Commands
                 case BuildTarget.StandaloneWindows:
                 case BuildTarget.StandaloneWindows64:
                 {
-#if UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN && UNITY_STANDALONE_WIN
                     UnityEditor.WindowsStandalone.UserBuildSettings.createSolution = true;
 #endif
                     break;
                 }
                 case BuildTarget.StandaloneOSX:
                 {
-#if UNITY_EDITOR_OSX
+#if UNITY_EDITOR_OSX && UNITY_STANDALONE_OSX
                         UnityEditor.OSXStandalone.UserBuildSettings.createXcodeProject = true;
 #endif
                     break;
@@ -175,14 +175,14 @@ namespace HybridCLR.Commands
                 case BuildTarget.StandaloneWindows:
                 case BuildTarget.StandaloneWindows64:
                 {
-#if UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN && UNITY_STANDALONE_WIN
                     UnityEditor.WindowsStandalone.UserBuildSettings.createSolution = oldCreateSolution;
 #endif
                     break;
                 }
                 case BuildTarget.StandaloneOSX:
                 {
-#if UNITY_EDITOR_OSX
+#if UNITY_EDITOR_OSX && UNITY_STANDALONE_OSX
                             UnityEditor.OSXStandalone.UserBuildSettings.createXcodeProject = oldCreateSolution;
 #endif
                     break;

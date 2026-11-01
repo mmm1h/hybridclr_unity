@@ -149,7 +149,18 @@ namespace HybridCLR.Installer
             get
             {
                 Debug.Log($"application path:{EditorApplication.applicationPath} {EditorApplication.applicationContentsPath}");
-#if NEW_IL2CPP_PATH
+#if UNITY_7000_0_OR_NEWER
+                string module = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android ? "AndroidPlayer" : "iOSSupport";
+                string contents = EditorApplication.applicationContentsPath;
+                string[] candidates = {
+                    Path.Combine(contents, "il2cpp"),
+                    Path.Combine(contents, "Resources/Scripting/il2cpp"),
+                    Path.Combine(contents, "PlaybackEngines", module, "il2cpp"),
+                    Path.GetFullPath(Path.Combine(contents, "../../PlaybackEngines", module, "il2cpp")) };
+                string installed = candidates.FirstOrDefault(path => Directory.Exists(Path.Combine(path, "libil2cpp")));
+                if (installed == null) throw new DirectoryNotFoundException("Matching Unity IL2CPP SDK not found: " + string.Join(", ", candidates));
+                return installed;
+#elif NEW_IL2CPP_PATH
 #if UNITY_IOS
                 string platformDirName = "iOSSupport";
 #elif UNITY_TVOS

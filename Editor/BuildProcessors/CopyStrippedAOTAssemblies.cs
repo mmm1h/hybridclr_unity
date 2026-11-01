@@ -20,6 +20,7 @@
 
 using HybridCLR.Utils;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -101,6 +102,18 @@ namespace HybridCLR.BuildProcessors
                 return;
             }
             Debug.Log($"[CopyStrippedAOTAssemblies] CopyScripDlls. src:{srcStripDllPath} target:{target}");
+#if UNITY_7000_0_OR_NEWER
+            // Unity 7 writes a BCL dataset per architecture. Do not flatten
+            // different metadata images over one another.
+            if (Directory.GetFiles(srcStripDllPath, "*.dll").Length == 0)
+            {
+                string[] architectures = Directory.GetDirectories(srcStripDllPath)
+                    .Where(path => Directory.GetFiles(path, "*.dll").Length != 0).ToArray();
+                if (architectures.Length != 1)
+                    throw new BuildFailedException($"Select one architecture when generating Unity 7 AOT metadata. Found {architectures.Length} datasets in {srcStripDllPath}");
+                srcStripDllPath = architectures[0];
+            }
+#endif
 
             var dstPath = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
 

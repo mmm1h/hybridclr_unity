@@ -92,21 +92,40 @@ public static class BuildPlayerFixture
     }
 
     public static void BuildDefaultApi() { BuildWithApi(ApiCompatibilityLevel.NET_Standard); }
+    public static void BuildAndroid() { BuildWithApi(ApiCompatibilityLevel.NET_Standard, BuildTarget.Android); }
+    public static void BuildIosSimulator() { BuildWithApi(ApiCompatibilityLevel.NET_Standard, BuildTarget.iOS); }
 
-    private static void BuildWithApi(ApiCompatibilityLevel api)
+    private static void BuildWithApi(ApiCompatibilityLevel api, BuildTarget target = BuildTarget.StandaloneWindows64)
     {
         string project = Directory.GetParent(Application.dataPath).FullName;
         PlayerSettings.productName = "HybridCLRUnity7Fixture";
-        PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.IL2CPP);
-        PlayerSettings.SetApiCompatibilityLevel(NamedBuildTarget.Standalone, api);
-        EditorUserBuildSettings.development = false;
+        NamedBuildTarget namedTarget = NamedBuildTarget.FromBuildTargetGroup(BuildPipeline.GetBuildTargetGroup(target));
+        PlayerSettings.SetScriptingBackend(namedTarget, ScriptingImplementation.IL2CPP);
+        PlayerSettings.SetApiCompatibilityLevel(namedTarget, api);
+        PlayerSettings.SetApplicationIdentifier(namedTarget, "com.mmm1h.hybridclr.unity7fixture");
+        EditorUserBuildSettings.development = target == BuildTarget.Android;
+        if (target == BuildTarget.Android)
+        {
+            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
+            PlayerSettings.Android.targetSdkVersion = (AndroidSdkVersions)36;
+            EditorUserBuildSettings.exportAsGoogleAndroidProject = false;
+            PlayerSettings.SetGraphicsAPIs(target, new[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 });
+        }
+        if (target == BuildTarget.iOS)
+        {
+            PlayerSettings.iOS.sdkVersion = iOSSdkVersion.SimulatorSDK;
+            PlayerSettings.iOS.simulatorSdkArchitecture = AppleMobileArchitectureSimulator.ARM64;
+            PlayerSettings.iOS.targetOSVersionString = "15.0";
+        }
         var settings = HybridCLRSettings.instance;
         settings.enable = true;
         settings.useGlobalIl2cpp = false;
         settings.hotUpdateAssemblies = new[] { "HotPayload" };
         settings.externalHotUpdateAssembliyDirs = new[] {
             Path.Combine(project, "ExternalHotUpdate"),
-            Path.Combine(EditorApplication.applicationContentsPath, "PlaybackEngines/windowsstandalonesupport/il2cpp/unityaot/x64/lib") };
+            Environment.GetEnvironmentVariable("HYBRIDCLR_FIXTURE_BCL") ??
+                Path.Combine(EditorApplication.applicationContentsPath, "PlaybackEngines/windowsstandalonesupport/il2cpp/unityaot/x64/lib") };
         HybridCLRSettings.Save();
         string scenePath = "Assets/Empty.unity";
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -117,13 +136,16 @@ public static class BuildPlayerFixture
         if (!installer.HasInstalledHybridCLR())
             installer.InstallDefaultHybridCLR();
         PrebuildCommand.GenerateAll();
-        string stripped = HybridCLR.SettingsUtil.GetAssembliesPostIl2CppStripDir(BuildTarget.StandaloneWindows64);
+        string stripped = HybridCLR.SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
         string corelibName = File.Exists(Path.Combine(stripped, "System.Private.CoreLib.dll")) ? "System.Private.CoreLib.dll" : "mscorlib.dll";
         File.Copy(Path.Combine(stripped, corelibName), Path.Combine(Application.streamingAssetsPath, corelibName + ".bytes"), true);
         AssetDatabase.Refresh();
+        string outputName = target == BuildTarget.Android ? "HybridCLRUnity7Fixture.apk" :
+            target == BuildTarget.iOS ? "iOS" : "HybridCLRUnity7Fixture.exe";
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
-            scenes = new[] { scenePath }, target = BuildTarget.StandaloneWindows64,
-            locationPathName = Path.Combine(project, "Build/HybridCLRUnity7Fixture.exe"), options = BuildOptions.None });
+            scenes = new[] { scenePath }, target = target,
+            locationPathName = Path.Combine(project, "Build", outputName),
+            options = EditorUserBuildSettings.development ? BuildOptions.Development : BuildOptions.None });
         if (report.summary.result != BuildResult.Succeeded)
             throw new InvalidOperationException("Unity 7 fixture Player build failed: " + report.summary.result);
         Debug.Log("HYBRIDCLR_UNITY7_PLAYER_BUILD_OK");
