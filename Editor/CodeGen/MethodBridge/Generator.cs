@@ -48,6 +48,10 @@ namespace HybridCLR.CodeGen.MethodBridge
             public IReadOnlyCollection<CallNativeMethodSignatureInfo> CalliMethodSignatures { get; set; }
 
             public bool Development { get; set; }
+
+            public Action<string> Log { get; set; }
+
+            public Action<string> LogError { get; set; }
         }
 
         private class ABIReversePInvokeMethodInfo
@@ -80,6 +84,10 @@ namespace HybridCLR.CodeGen.MethodBridge
 
         private readonly bool _development;
 
+        private readonly Action<string> _log;
+
+        private readonly Action<string> _logError;
+
         private readonly TypeCreator _typeCreator;
 
         private readonly HashSet<MethodDesc> _managed2nativeMethodSet = new HashSet<MethodDesc>();
@@ -103,6 +111,13 @@ namespace HybridCLR.CodeGen.MethodBridge
             _outputFile = options.OutputFile;
             _typeCreator = new TypeCreator();
             _development = options.Development;
+            _log = options.Log ?? Debug.Log;
+            _logError = options.LogError ?? Debug.LogError;
+        }
+
+        private void LogFormat(string format, params object[] args)
+        {
+            _log(string.Format(format, args));
         }
 
         private readonly Dictionary<string, TypeInfo> _sig2Types = new Dictionary<string, TypeInfo>();
@@ -305,7 +320,7 @@ namespace HybridCLR.CodeGen.MethodBridge
             CheckUnique(_structTypes0.Select(t => ToFullName(t.Klass)));
             CheckUnique(_structTypes0.Select(t => t.CreateSigName()));
 
-            Debug.LogFormat("== before optimization struct:{3} managed2native:{0} native2managed:{1} adjustThunk:{2}",
+            LogFormat("== before optimization struct:{3} managed2native:{0} native2managed:{1} adjustThunk:{2}",
                 _managed2NativeMethodList0.Count, _native2ManagedMethodList0.Count, _adjustThunkMethodList0.Count, _structTypes0.Count);
         }
 
@@ -403,7 +418,8 @@ namespace HybridCLR.CodeGen.MethodBridge
 
         private AnalyzeTypeInfo CalculateAnalyzeTypeInfoBasic(TypeInfo typeInfo)
         {
-            Debug.Assert(typeInfo.IsStruct);
+            if (!typeInfo.IsStruct)
+                throw new ArgumentException("A structure type is required", nameof(typeInfo));
             if (_analyzeTypeInfos.TryGetValue(typeInfo, out var ati))
             {
                 return ati;
@@ -563,7 +579,7 @@ namespace HybridCLR.CodeGen.MethodBridge
             return $"{convStr}{desc.Sig}";
         }
 
-        private static CallingConvention GetCallingConvention(MethodDef method)
+        private CallingConvention GetCallingConvention(MethodDef method)
         {
             var monoPInvokeCallbackAttr = method.CustomAttributes.FirstOrDefault(ca => ca.AttributeType.Name == "MonoPInvokeCallbackAttribute");
             if (monoPInvokeCallbackAttr == null)
@@ -572,7 +588,7 @@ namespace HybridCLR.CodeGen.MethodBridge
             }
             if (monoPInvokeCallbackAttr.ConstructorArguments.Count == 0)
             {
-                Debug.LogError($"MonoPInvokeCallbackAttribute on method {method.FullName} has no constructor arguments. Using CallingConvention.Winapi as default.");
+                _logError($"MonoPInvokeCallbackAttribute on method {method.FullName} has no constructor arguments. Using CallingConvention.Winapi as default.");
                 return CallingConvention.Winapi;
             }
             object delegateTypeSig = monoPInvokeCallbackAttr.ConstructorArguments[0].Value;
@@ -686,7 +702,7 @@ namespace HybridCLR.CodeGen.MethodBridge
         {
             BuildAnalyzeTypeInfos();
             BuildOptimizedMethods();
-            Debug.LogFormat("== after optimization struct:{3} managed2native:{0} native2managed:{1} adjustThunk:{2}",
+            LogFormat("== after optimization struct:{3} managed2native:{0} native2managed:{1} adjustThunk:{2}",
                                _managed2NativeMethodList.Count, _native2ManagedMethodList.Count, _adjustThunkMethodList.Count, structTypes.Count);
         }
 
@@ -740,7 +756,7 @@ namespace HybridCLR.CodeGen.MethodBridge
             GenerateManaged2NativeFunctionPointerMethodStub(_callidMethods, cw);
 
             Directory.CreateDirectory(Path.GetDirectoryName(_outputFile));
-            cw.Save(_outputFile);
+            cw.Save(_outputFile, _log);
         }
 
         private static string GetIl2cppCallConventionName(CallingConvention conv)
@@ -789,7 +805,7 @@ namespace HybridCLR.CodeGen.MethodBridge
                     cw.WriteLine("}");
                     stubCodes.Add($"{{\"{methodInfo.Signature}\", (Il2CppMethodPointer)__ReversePInvokeMethod_{methodIndex}}},");
                 }
-                Debug.Log($"[ReversePInvokeWrap.Generator] method:{method.MethodDef} wrapperCount:{methodInfo.Count}");
+                _log($"[ReversePInvokeWrap.Generator] method:{method.MethodDef} wrapperCount:{methodInfo.Count}");
             }
 
             cw.WriteLine();

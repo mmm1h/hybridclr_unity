@@ -8,4 +8,6 @@ Unity 7 的 `ScriptCompilationOptions.DevelopmentBuild` 已成为编译错误。
 
 本分支不在 Unity 7 的 CoreCLR 编辑器中自动安装未经验证的方法补丁。启用 HybridCLR 构建时，会在修改脚本后端和 IL2CPP 环境路径之前报告原生适配尚未完成。Installer 保持拒绝安装 Unity 6 原生库，不增加指向旧版本的 Unity 7 映射。
 
-编辑器程序集已使用 Unity 7 的真实引用和 Roslyn 编译通过。该结果仅验证 C# 编译，尚未验证本 fork 在编辑器中的重载、IL2CPP Player 和安卓或 iOS 的热更新。原生泛型上下文、类型加载异常和基础运行时补丁的验证范围见配套源码说明。
+编辑器程序集已使用 Unity 7 的真实引用和 Roslyn 编译通过。桥接生成器支持注入日志处理器，独立测试直接运行相同的生成代码。`Tests~/Unity7/build_bridge_host.py` 从已编译的本 fork 编辑器程序集构建独立生成器，供配套解释器的真实 IL2CPP 测试使用。
+
+配套 Win64 独立 IL2CPP 测试已成功运行两版外部热更 DLL，覆盖反射、泛型、委托、GC、原子操作、异常、模块初始化和特性。Unity Editor 安装及 Player 构建集成仍在适配，安卓和 iOS 没有构建或设备执行结论。完整范围见配套解释器说明。

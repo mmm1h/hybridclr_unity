@@ -87,8 +87,13 @@ namespace HybridCLR.CppCodeGen
 
         public void Save(string filePath)
         {
+            Save(filePath, message => UnityEngine.Debug.Log(message));
+        }
+
+        public void Save(string filePath, Action<string> log)
+        {
             System.IO.File.WriteAllText(filePath, GetContent() + "\n", new UTF8Encoding(false));
-            UnityEngine.Debug.Log($"write file to {filePath}");
+            log?.Invoke($"write file to {filePath}");
         }
     }
 }
