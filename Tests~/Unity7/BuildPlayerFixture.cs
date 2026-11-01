@@ -16,6 +16,15 @@ public static class BuildPlayerFixture
     private const string PlayPassed = "HybridCLR.Unity7.Play.Passed";
     private const string PlayStarted = "HybridCLR.Unity7.Play.Started";
 
+    public static void Reinstall()
+    {
+        new InstallerController().InstallDefaultHybridCLR();
+        string runtime = Path.Combine(HybridCLR.SettingsUtil.LocalIl2CppDir, "libil2cpp/il2cpp-class-internals.h");
+        if (!File.ReadAllText(runtime).Contains("methodPointerCallByInterp"))
+            throw new InvalidOperationException("The runtime source patches were not applied");
+        Debug.Log("HYBRIDCLR_UNITY7_NESTED_INSTALL_OK");
+    }
+
     public static void Play()
     {
         SessionState.SetBool(PlayPending, true);

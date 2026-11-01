@@ -57,7 +57,7 @@ namespace HybridCLR.Installer
 
         internal static void ValidateInstallation()
         {
-            Pin pin = LoadPin();
+            LoadPin();
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneWindows64)
                 throw new NotSupportedException("This Unity 7 maintenance runtime currently permits only Win64 IL2CPP builds");
             if (SettingsUtil.HybridCLRSettings.useGlobalIl2cpp)
@@ -100,7 +100,7 @@ namespace HybridCLR.Installer
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.RedirectStandardError = true;
             // Source preparation must not discover the surrounding game repository.
-            process.StartInfo.EnvironmentVariables["GIT_CEILING_DIRECTORIES"] = directory;
+            process.StartInfo.EnvironmentVariables["GIT_CEILING_DIRECTORIES"] = Path.GetDirectoryName(Path.GetFullPath(directory)).Replace('\\', '/');
             process.StartInfo.Arguments = string.Join(" ", arguments.Select(QuoteArgument));
             process.Start();
             var stdout = process.StandardOutput.ReadToEndAsync();
